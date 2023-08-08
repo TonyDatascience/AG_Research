@@ -1,0 +1,120 @@
+---
+title: "Final_Table"
+author: "Dr.Thanawat Wongphan"
+date: "2023-03-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data preparation
+
+This is an R Markdown document for the AG research.
+
+```{r main_code, echo=FALSE, warning=FALSE,message=FALSE}
+#Prepare Data
+#This is the original R-File
+library("tidyverse")
+library("broom")
+library("ggplot2")
+library("readxl")
+library("dplyr")
+library("rstatix")
+library("knitr")
+
+#Set working directory
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+#Step 0: Reading file
+
+df0 = read_xlsx("ap_original.xlsx")
+df<-df0
+#Step 1: Table descriptive
+#1.1 Age----
+AgeIQR<-df %>% group_by(arm) %>% get_summary_stats(age, type = "median_iqr")
+w<-wilcox.test(df[df['arm']==1,]$age,df[df['arm']==2,]$age,paired=FALSE)
+AgeIQR$pValue= c(w$p.value,w$method)
+View(AgeIQR)
+#1.2 Sex----
+GenderTable<-data.frame(Arm1=c(sum(df[df['arm']==1,]$gender==1),sum(df[df['arm']==1,]$gender==2)),Arm2=c(sum(df[df['arm']==2,]$gender==1),sum(df[df['arm']==2,]$gender==2)))
+ChiTest<-chisq.test(GenderTable)
+GenderTable$pValue=c(ChiTest$p.value,ChiTest$method)
+row.names(GenderTable)<-c("Male","Female")
+View(GenderTable)
+#1.3 BMI
+BMI<-df %>% group_by(arm) %>% get_summary_stats(bmi, type = "mean_sd")
+tBMI<-t.test(df[df['arm']==1,]$bmi,df[df['arm']==2,]$bmi,paired=FALSE)
+BMI$pValue<-c(tBMI$p.value,tBMI$method)
+View(BMI)
+#1.4 Underlying disease
+rxallergyTable<-data.frame(Arm1=c(sum(df[df['arm']==1,]$underly==1),sum(df[df['arm']==1,]$underly==2)),Arm2=c(sum(df[df['arm']==2,]$underly==1),sum(df[df['arm']==2,]$underly==2)))
+Chirxallergy<-chisq.test(rxallergyTable)
+rxallergyTable$pValue=c(Chirxallergy$p.value,Chirxallergy$method)
+row.names(rxallergyTable)<-c("No underlying disease","Underlying disease presented")
+View(rxallergyTable)
+#1.5 Smoke
+#1.5.1 Recode to smoke or not
+df_recode<-df %>% mutate(smoke_bit = if_else(((smoke==2) |(smoke==3)),2,1 ))
+df_recode$smoke_bit
+#2 = Smoke, 1 = not smoke or stopped
+smoke_bitTable<-data.frame(Arm1=c(sum(df_recode[df_recode['arm']==1,]$smoke_bit==1),sum(df_recode[df_recode['arm']==1,]$smoke_bit==2)),Arm2=c(sum(df_recode[df_recode['arm']==2,]$smoke_bit==1),sum(df_recode[df_recode['arm']==2,]$smoke_bit==2)))
+Chismoke_bit<-chisq.test(smoke_bitTable)
+smoke_bitTable$pValue=c(Chismoke_bit$p.value,Chismoke_bit$method)
+row.names(smoke_bitTable)<-c("No smoke","Smoke")
+View(smoke_bitTable)
+
+  
+#1.6 Alcohol
+#1.6.1 Drink or not
+df_recode<-df_recode %>% mutate(alc_bit = if_else(((alc==2) |(alc==3)),2,1 ))
+alc_bitTable<-data.frame(Arm1=c(sum(df_recode[df_recode['arm']==1,]$alc_bit==1),sum(df_recode[df_recode['arm']==1,]$alc_bit==2)),Arm2=c(sum(df_recode[df_recode['arm']==2,]$alc_bit==1),sum(df_recode[df_recode['arm']==2,]$alc_bit==2)))
+Chialc_bit<-chisq.test(alc_bitTable)
+alc_bitTable$pValue=c(Chialc_bit$p.value,Chialc_bit$method)
+row.names(alc_bitTable)<-c("No alcohol drinking","Alcohol drinking")
+View(alc_bitTable)
+#1.7 Drug allergy
+rxallergyTable<-data.frame(Arm1=c(sum(df[df['arm']==1,]$rxallergy==1),sum(df[df['arm']==1,]$rxallergy==2)),Arm2=c(sum(df[df['arm']==2,]$rxallergy==1),sum(df[df['arm']==2,]$rxallergy==2)))
+Chirxallergy<-chisq.test(rxallergyTable)
+rxallergyTable$pValue=c(Chirxallergy$p.value,Chirxallergy$method)
+row.names(rxallergyTable)<-c("No history of drug allergy","History of drug allergy")
+View(rxallergyTable)
+#1.8 Low dose AG
+apbeforetrTable<-data.frame(Arm1=c(sum(df[df['arm']==1,]$apbeforetr==1),sum(df[df['arm']==1,]$apbeforetr==2)),Arm2=c(sum(df[df['arm']==2,]$apbeforetr==1),sum(df[df['arm']==2,]$apbeforetr==2)))
+Chiapbeforetr<-chisq.test(apbeforetrTable)
+apbeforetrTable$pValue=c(Chiapbeforetr$p.value,Chiapbeforetr$method)
+row.names(apbeforetrTable)<-c("No andrographeride usage before","Low dose andrographeride usage before")
+View(apbeforetrTable)
+#1.9 Herb
+herbalTable<-data.frame(Arm1=c(sum(df[df['arm']==1,]$herbal==1),sum(df[df['arm']==1,]$herbal==2)),Arm2=c(sum(df[df['arm']==2,]$herbal==1),sum(df[df['arm']==2,]$herbal==2)))
+Chiherbal<-chisq.test(herbalTable)
+herbalTable$pValue=c(Chiherbal$p.value,Chiherbal$method)
+row.names(herbalTable)<-c("No herbal usage before","Other herbal usage presented")
+View(herbalTable)
+#1.10 Vaccine Table
+vaccine_stat<-df %>% group_by(arm) %>% get_summary_stats(vac_no, type = "mean_sd")
+tVaccine<-t.test(df[df['arm']==1,]$vac_no,df[df['arm']==2,]$vac_no,paired=FALSE)
+vaccine_stat$pValue<-c(tVaccine$p.value,tVaccine$method)
+View(vaccine_stat)
+vac_no_freq_table<-df %>% group_by(arm) %>% count(vac_no)
+View(vac_no_freq_table)
+
+
+vaccine_res<-df %>% group_by(arm) %>%
+  summarise("Mean vaccincation"= mean(vac_no,trim=.2, na.rm = TRUE),"SD." = format(sd(vac_no,na.rm = T),nsmall=2), "Min" = min(vac_no),"Max" = max(vac_no))
+View(vaccine_res)
+#5.1 Table IQR
+```
+Present Table:
+```{r herb, echo=FALSE}
+kable(herbalTable)
+```
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
